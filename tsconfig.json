@@ -1,0 +1,7 @@
+{
+  "include": ["**/*.ts"],
+  "extends": "tsconfig/nestjs.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+  }
+}
