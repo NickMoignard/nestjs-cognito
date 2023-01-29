@@ -204,14 +204,18 @@ export class CognitoService {
   /**
    * Change the current password for an authenticated user.
    */
-  async changePassword(dto: ChangePasswordDto): Promise<"SUCCESS"> {
+  async changePassword({
+    email,
+    currentPassword,
+    newPassword,
+  }: ChangePasswordDto): Promise<"SUCCESS"> {
     const authenticationDetails = new AuthenticationDetails({
-      Username: dto.email,
-      Password: dto.currentPassword,
+      Username: email,
+      Password: currentPassword,
     });
 
     const cognitoUser = new CognitoUser({
-      Username: dto.email,
+      Username: email,
       Pool: this.userPool,
     });
 
@@ -219,8 +223,8 @@ export class CognitoService {
       cognitoUser.authenticateUser(authenticationDetails, {
         onSuccess: () => {
           cognitoUser.changePassword(
-            dto.currentPassword,
-            dto.newPassword,
+            currentPassword,
+            newPassword,
             (err, result) => {
               if (err) {
                 reject(err);
@@ -345,9 +349,9 @@ export class CognitoService {
   /**
    * List information about the current device.
    */
-  async getDevice(dto: GetDeviceDto): Promise<string> {
+  async getDevice({ email }: GetDeviceDto): Promise<string> {
     const cognitoUser = new CognitoUser({
-      Username: dto.email,
+      Username: email,
       Pool: this.userPool,
     });
 
@@ -391,11 +395,11 @@ export class CognitoService {
   /**
    * Remember a device.
    */
-  async setDeviceStatusRemembered(
-    dto: SetDeviceStatusRememberedDto
-  ): Promise<string> {
+  async setDeviceStatusRemembered({
+    email,
+  }: SetDeviceStatusRememberedDto): Promise<string> {
     const cognitoUser = new CognitoUser({
-      Username: dto.email,
+      Username: email,
       Pool: this.userPool,
     });
 
@@ -531,10 +535,10 @@ export class CognitoService {
   /**
    * Update user attributes.
    */
-  async updateAttributes({
+  async updateAttributes<T extends UpdateAttributesDto>({
     email,
     ...rest
-  }: UpdateAttributesDto): Promise<{ result?: string; details?: unknown }> {
+  }: T): Promise<{ result?: string; details?: unknown }> {
     const cognitoUser = new CognitoUser({
       Username: email,
       Pool: this.userPool,
@@ -561,10 +565,10 @@ export class CognitoService {
   /**
    * Delete user attributes.
    */
-  async deleteAttributes({
+  async deleteAttributes<T extends DeleteAttributesDto>({
     email,
     attributeList,
-  }: DeleteAttributesDto): Promise<string> {
+  }: T): Promise<string> {
     const cognitoUser = new CognitoUser({
       Username: email,
       Pool: this.userPool,
