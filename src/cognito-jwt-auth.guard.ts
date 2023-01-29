@@ -14,8 +14,7 @@ export class CognitoJwtAuthGuard extends AuthGuard("jwt") {
     return super.canActivate(context);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  handleRequest(err, user, info) {
+  handleRequest(err, user, _info) {
     if (err || !user) {
       throw err || new UnauthorizedException();
     }
