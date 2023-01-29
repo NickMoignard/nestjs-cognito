@@ -8,6 +8,7 @@ import {
   IAuthenticationCallback,
   UserData,
 } from "amazon-cognito-identity-js";
+
 import {
   ChangePasswordDto,
   ConfirmPasswordDto,
@@ -113,31 +114,6 @@ export class CognitoService {
         session: CognitoUserSession,
         _userConfirmationNecessary?: boolean
       ) => {
-        // import * as AWS from 'aws-sdk/global';
-        //POTENTIAL: Region needs to be set if not already set previously elsewhere.
-        // AWS.config.region = '<region>';
-
-        // AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-        //   IdentityPoolId: '...', // your identity pool id here
-        //   Logins: {
-        //     // Change the key below according to the specific region your user pool is in.
-        //     'cognito-idp.<region>.amazonaws.com/<YOUR_USER_POOL_ID>': result
-        //       .getIdToken()
-        //       .getJwtToken(),
-        //   },
-        // });
-
-        //refreshes credentials using AWS.CognitoIdentity.getCredentialsForIdentity()
-        // AWS.config.credentials.refresh(error => {
-        //   if (error) {
-        //     console.error(error);
-        //   } else {
-        //     // Instantiate aws sdk service objects now that the credentials have been updated.
-        //     // example: var s3 = new AWS.S3();
-        //     console.log('Successfully logged!');
-        //   }
-        // });
-
         resolve({
           accessToken: session.getAccessToken().getJwtToken(),
           refreshToken: session.getRefreshToken().getToken(),
@@ -276,7 +252,7 @@ export class CognitoService {
   }
 
   /**
-   * Global signout for an authenticated user(invalidates all issued tokens).
+   * Global sign out for an authenticated user(invalidates all issued tokens).
    */
   async globalSignOut({ email }: GlobalSignOutDto): Promise<string> {
     const cognitoUser = new CognitoUser({
@@ -480,7 +456,7 @@ export class CognitoService {
   }
 
   /**
-   * Delete an authenticate user.
+   * Delete an authenticated user.
    */
   async deleteUser({ email }: DeleteUserDto): Promise<string> {
     const cognitoUser = new CognitoUser({
@@ -534,9 +510,9 @@ export class CognitoService {
   /**
    * Retrieve user attributes for authenticated user
    */
-  async getUserAttributes<T extends GetUserAttributesDto>({
+  async getUserAttributes({
     email,
-  }: T): Promise<CognitoUserAttribute[]> {
+  }: GetUserAttributesDto): Promise<CognitoUserAttribute[]> {
     const cognitoUser = new CognitoUser({
       Username: email,
       Pool: this.userPool,
@@ -552,25 +528,55 @@ export class CognitoService {
     });
   }
 
-  // async updateAttributes(dto: UpdateAttributesDto): Promise<unknown> {
-  //   const cognitoUser = new CognitoUser({
-  //     Username: dto.email,
-  //     Pool: this.userPool,
-  //   });
+  /**
+   * Update user attributes.
+   */
+  async updateAttributes({
+    email,
+    ...rest
+  }: UpdateAttributesDto): Promise<{ result?: string; details?: unknown }> {
+    const cognitoUser = new CognitoUser({
+      Username: email,
+      Pool: this.userPool,
+    });
 
-  //   return new Promise((_resolve, _reject) => {
-  //     cognitoUser.updateAttributes();
-  //   });
-  // }
+    const userAttributes = Object.keys(rest).map(
+      (key) =>
+        new CognitoUserAttribute({
+          Name: key,
+          Value: rest[key],
+        })
+    );
 
-  // async deleteAttributes(dto: DeleteAttributesDto): Promise<unknown> {
-  //   const cognitoUser = new CognitoUser({
-  //     Username: dto.email,
-  //     Pool: this.userPool,
-  //   });
+    return new Promise((resolve, reject) => {
+      cognitoUser.updateAttributes(userAttributes, (error, result, details) => {
+        if (error) {
+          reject(error);
+        }
+        resolve({ result, details });
+      });
+    });
+  }
 
-  //   return new Promise((_resolve, _reject) => {
-  //     cognitoUser.deleteAttributes();
-  //   });
-  // }
+  /**
+   * Delete user attributes.
+   */
+  async deleteAttributes({
+    email,
+    attributeList,
+  }: DeleteAttributesDto): Promise<string> {
+    const cognitoUser = new CognitoUser({
+      Username: email,
+      Pool: this.userPool,
+    });
+
+    return new Promise((resolve, reject) => {
+      cognitoUser.deleteAttributes(attributeList, (error, result) => {
+        if (error) {
+          reject(error);
+        }
+        resolve(result);
+      });
+    });
+  }
 }
